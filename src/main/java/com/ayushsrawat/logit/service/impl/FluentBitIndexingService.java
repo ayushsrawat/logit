@@ -19,6 +19,7 @@ public class FluentBitIndexingService implements IndexingService<FluentBitEvent>
 
   private enum Fields {
     TIMESTAMP("timestamp"),
+    SERVICE("service_name"),
     CLAZZ("class"),
     METHOD("method"),
     LEVEL("level"),
@@ -42,6 +43,9 @@ public class FluentBitIndexingService implements IndexingService<FluentBitEvent>
         log.error("Unable to parse timestamp {}", timestamp);
         return null;
       }
+    }
+    if (node.has(Fields.SERVICE.name)) {
+      event.setServiceName(node.get(Fields.SERVICE.name).asText());
     }
     if (node.has(Fields.CLAZZ.name)) {
       event.setClazz(node.get(Fields.CLAZZ.name).asText());
