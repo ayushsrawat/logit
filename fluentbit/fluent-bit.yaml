@@ -1,0 +1,74 @@
+env:
+  log_path: "/Users/ayushrawat/cs/devops/elk/logs/catalina.out"
+  state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state.db"
+
+service:
+  log_level: debug
+  flush: 5
+
+pipeline:
+  inputs:
+    - name: tail
+      buffer_chunk_size: 1M
+      buffer_max_size: 5M
+      read_from_head: true
+      path: ${log_path}
+      db: ${state_db_path}
+      tag: auth
+      key: log
+      multiline.parser: multiline_log_parser
+
+  filters:
+    - name: parser
+      match: "*"
+      key_name: log
+      parser: java_log_parser
+
+    - name: record_modifier
+      match: auth
+      record:
+        - service_name auth
+
+  outputs:
+    - name: http
+      match: "*"
+      host: 127.0.0.1
+      port: 3338
+      uri: /api/index/fluent
+      format: json
+      json_date_key: date
+      json_date_format: iso8601
+
+multiline_parsers:
+  - name: multiline_log_parser
+    type: regex
+    flush_timeout: 1000
+    rules:
+      - state: start_state
+        regex: "^[A-Z][a-z]{2} [0-9]{2}, [0-9]{4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [AP]M"
+        next_state: cont
+      - state: cont
+        regex: "^(?![A-Z][a-z]{2} [0-9]{2}, [0-9]{4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [AP]M).*"
+        next_state: cont
+
+parsers:
+  - name: java_log_parser
+    type: regex
+    format: regex
+    regex: "^(?<timestamp>[A-Z][a-z]{2}\\s*[0-9]{1,2}, [0-9]{4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [AP]M)\\s+(?<class>[A-Za-z0-9\\._\\$]+)\\s+(?<method>[^\n]+)\n+(?<level>(INFO|DEBUG|WARN|ERROR|SEVERE|FATAL|TRACE|WARNING)):\\s+(?<msg>[\\s\\S]*)"
+    time_key: timestamp
+
+#
+# References:
+#
+# configuration: https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/yaml/configuration-file
+# input tail: https://docs.fluentbit.io/manual/data-pipeline/inputs/tail
+# parsers: https://docs.fluentbit.io/manual/data-pipeline/parsers/configuring-parser
+# record modifier: https://docs.fluentbit.io/manual/data-pipeline/filters/record-modifier
+#
+# multiline parsers: https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/multiline-parsing#parsers_multiline.yaml-2
+# multiline rules:  If any line starts with start_state's regex then keep appending un-till cont's regex found
+#                   In another words keep appending logs to one big log un-till another timestamp found
+#
+# Input -> MultiLine -> Parser -> Output
+#
