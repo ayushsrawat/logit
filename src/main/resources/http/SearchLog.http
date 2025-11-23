@@ -1,0 +1,33 @@
+### Search Fluent Bit Logs
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
+
+{
+  "index": "auth",
+  "query": "level:error OR message:timeout",
+  "topN": 20,
+  "fields": [
+    "timestamp",
+    "message",
+    "level",
+    "class",
+    "method"
+  ],
+  "stem": true
+}
+
+### Search Fluent Bit Logs
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
+
+{
+  "index": "auth",
+  "query": "parsed",
+  "topN": 0,
+  "fields": [
+    "message"
+  ],
+  "stem": true
+}

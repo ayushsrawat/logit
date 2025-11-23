@@ -21,14 +21,14 @@ public class IndexController {
 
   private static final Logger log = LoggerFactory.getLogger(IndexController.class);
 
-  private final IndexingService<FluentBitEvent> fluentBitService;
+  private final IndexingService<FluentBitEvent> fbIndexingService;
 
   @PostMapping("/fluent")
-  public ResponseEntity<Void> fluentBit(@RequestBody JsonNode payload) {
+  public ResponseEntity<Void> indexFluentBitLogs(@RequestBody JsonNode payload) {
     log.info("Received {} logs", payload.size());
-    List<FluentBitEvent> events = fluentBitService.parseEvents(payload);
+    List<FluentBitEvent> events = fbIndexingService.parseEvents(payload);
     log.info("Parsed {} logs", events.size());
-    int indexed = fluentBitService.indexLogEvents(events);
+    int indexed = fbIndexingService.indexLogEvents(events);
     log.info("Indexed {} events", indexed);
     return ResponseEntity.ok().build();
   }

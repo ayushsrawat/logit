@@ -1,7 +1,11 @@
 package com.ayushsrawat.logit.payload.request;
 
 import com.ayushsrawat.logit.payload.event.LogEvent;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.lang.NonNull;
 
@@ -9,6 +13,10 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FluentBitEvent implements LogEvent {
 
   private LocalDateTime timestamp;

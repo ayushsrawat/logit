@@ -1,9 +1,13 @@
 package com.ayushsrawat.logit.lucene.impl;
 
 import com.ayushsrawat.logit.lucene.LogIndexer;
+import com.ayushsrawat.logit.lucene.LogSearcher;
+import com.ayushsrawat.logit.lucene.SearchHit;
 import com.ayushsrawat.logit.payload.request.FluentBitEvent;
+import com.ayushsrawat.logit.payload.request.SearchRequest;
 import com.ayushsrawat.logit.util.DateUtil;
 import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
@@ -13,8 +17,22 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.CollectorManager;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Scorable;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.SimpleCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,14 +43,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FluentBitEngine implements LogIndexer<FluentBitEvent> {
+public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<SearchHit<FluentBitEvent>> {
 
   @Value("${logit.index.dir}")
   private String logitIndexDir;
@@ -40,6 +61,7 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent> {
   private final DateUtil dateUtil;
 
   private final Map<String, IndexWriter> writers = new ConcurrentHashMap<>();
+  private final Map<String, IndexSearcher> searchers = new ConcurrentHashMap<>();
 
   public enum IndexField {
     TIMESTAMP("timestamp"),
@@ -73,36 +95,24 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent> {
     }
   }
 
-  private IndexWriter getIndexWriter(String indexName) {
-    return writers.computeIfAbsent(indexName, k -> {
-      Path indexPath = Paths.get(logitIndexDir + k);
+  @Override
+  public IndexWriter getIndexWriter(String indexName) {
+    return writers.computeIfAbsent(indexName, index -> {
+      Path indexPath = Paths.get(logitIndexDir + index);
       try {
         if (!Files.exists(indexPath)) {
           Files.createDirectories(indexPath);
         }
         Directory directory = FSDirectory.open(indexPath);
-        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = getIndexAnalyzer();
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer)
             .setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
         return new IndexWriter(directory, iwc);
       } catch (IOException e) {
-        log.error("Error creating IndexWriter for index {}: {}", k, e.getMessage());
+        log.error("Error creating IndexWriter for index {}: {}", index, e.getMessage());
         return null;
       }
     });
-  }
-
-  @PreDestroy
-  public void closeAll() {
-    log.info("Closing all IndexWriters...");
-    writers.forEach((index, writer) -> {
-      try {
-        writer.close();
-      } catch (IOException e) {
-        log.error("Error closing IndexWriter for index {}: {}", index, e.getMessage());
-      }
-    });
-    writers.clear();
   }
 
   @Override
@@ -122,6 +132,143 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent> {
       docs.add(doc);
     }
     return docs;
+  }
+
+  @Override
+  public Analyzer getIndexAnalyzer() {
+    return new StandardAnalyzer();
+  }
+
+  ///
+  /// SEARCHING...
+  ///
+
+  @Override
+  public Analyzer getSearchAnalyzer(boolean stem) {
+    return new StandardAnalyzer();
+  }
+
+  @Override
+  public List<SearchHit<FluentBitEvent>> search(SearchRequest searchQuery) {
+    try {
+      IndexSearcher searcher = getIndexSearcher(searchQuery.getIndex());
+      List<String> searchFields = Arrays.stream(IndexField.values())
+        .map(indexField -> indexField.name)
+        .filter(name -> searchQuery.getFields().contains(name))
+        .toList();
+      BooleanQuery.Builder bqb = new BooleanQuery.Builder();
+      QueryParser parser = new MultiFieldQueryParser(searchFields.toArray(new String[0]), getSearchAnalyzer(searchQuery.isStem()));
+      Query textQuery = parser.parse(searchQuery.getQuery());
+      bqb.add(textQuery, BooleanClause.Occur.MUST);
+      Query query = bqb.build();
+      PriorityQueue<SearchHit<FluentBitEvent>> hits = searcher.search(query, new LogCollectorManager());
+      log.info("Searched [{}] tweets for the query [{}]", hits.size(), query);
+      List<SearchHit<FluentBitEvent>> results = new ArrayList<>();
+      final int n = hits.size();
+      searchQuery.setTopN(searchQuery.getTopN() == null || searchQuery.getTopN() <= 0 ? Integer.MAX_VALUE : searchQuery.getTopN());
+      while (!hits.isEmpty() && (n - hits.size()) < searchQuery.getTopN()) {
+        results.add(hits.poll());
+      }
+      return results;
+    } catch (IOException | ParseException e) {
+      log.error("Error Search for request{} : {}", searchQuery, e.getMessage());
+      return List.of();
+    }
+  }
+
+  @Override
+  public IndexSearcher getIndexSearcher(String indexName) {
+    return searchers.computeIfAbsent(indexName, index -> {
+      try {
+        Path indexPath = Paths.get(logitIndexDir + index);
+        Directory directory = FSDirectory.open(indexPath);
+        IndexReader indexReader = DirectoryReader.open(directory);
+        return new IndexSearcher(indexReader);
+      } catch (IOException e) {
+        log.error("Error creating Index Searcher for index {} : {}", indexName, e.getMessage());
+        return null;
+      }
+    });
+  }
+
+  @PreDestroy
+  public void closeAll() {
+    log.info("Closing all IndexWriters...");
+    writers.forEach((index, writer) -> {
+      try {
+        writer.close();
+      } catch (IOException e) {
+        log.error("Error closing IndexWriter for index {}: {}", index, e.getMessage());
+      }
+    });
+    writers.clear();
+    searchers.forEach((index, searcher) -> {
+      try {
+        searcher.getIndexReader().close();
+      } catch (IOException e) {
+        log.error("Error closing IndexSearch for index {}: {}", index, e.getMessage());
+      }
+    });
+    searchers.clear();
+  }
+
+  private final class LogCollectorManager implements CollectorManager<LogCollector, PriorityQueue<SearchHit<FluentBitEvent>>> {
+
+    @Override
+    public LogCollector newCollector() {
+      return new LogCollector();
+    }
+
+    @Override
+    public PriorityQueue<SearchHit<FluentBitEvent>> reduce(Collection<LogCollector> collectors) {
+      final PriorityQueue<SearchHit<FluentBitEvent>> hits = new PriorityQueue<>(SearchHit::compareTo);
+      for (LogCollector collector : collectors) {
+        for (SearchHit<FluentBitEvent> hit : collector.getHits()) {
+          hits.offer(hit);
+        }
+      }
+      return hits;
+    }
+  }
+
+  private final class LogCollector extends SimpleCollector {
+    private LeafReaderContext context;
+    private Scorable scorer;
+
+    @Getter
+    private final List<SearchHit<FluentBitEvent>> hits = new ArrayList<>();
+
+    @Override
+    public void doSetNextReader(LeafReaderContext context) {
+      this.context = context;
+    }
+
+    @Override
+    public void setScorer(Scorable scorer) {
+      this.scorer = scorer;
+    }
+
+    @Override
+    public void collect(int docId) throws IOException {
+      Document doc = context.reader().storedFields().document(docId); // this needs to be opened
+      FluentBitEvent log = documentToLogEvent(doc);
+      hits.add(new SearchHit<>(log, scorer.score(), context.docBase + docId));
+    }
+
+    @Override
+    public ScoreMode scoreMode() {
+      return ScoreMode.COMPLETE;
+    }
+  }
+
+  private FluentBitEvent documentToLogEvent(Document document) {
+    return FluentBitEvent.builder()
+      .timestamp(dateUtil.convertToLocalDateTime(dateUtil.parseLong(document.get(IndexField.TIMESTAMP.name))))
+      .clazz(document.get(IndexField.CLASS.name))
+      .method(document.get(IndexField.METHOD.name))
+      .level(document.get(IndexField.LEVEL.name))
+      .message(document.get(IndexField.MESSAGE.name))
+      .build();
   }
 
 }

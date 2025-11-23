@@ -21,8 +21,17 @@ public class DateUtil {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(time), TimeZone.getDefault().toZoneId());
   }
 
+  @SuppressWarnings("unused")
   public Date convertToDate(LocalDateTime localDateTime) {
     return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
+  }
+
+  public Long parseLong(String value) {
+    try {
+      return value == null || value.isBlank() ? 0L : Long.parseLong(value.trim());
+    } catch (NumberFormatException e) {
+      return 0L;
+    }
   }
 
 }

@@ -1,8 +1,12 @@
 package com.ayushsrawat.logit.service.impl;
 
 import com.ayushsrawat.logit.lucene.LogIndexer;
+import com.ayushsrawat.logit.lucene.LogSearcher;
+import com.ayushsrawat.logit.lucene.SearchHit;
 import com.ayushsrawat.logit.payload.request.FluentBitEvent;
+import com.ayushsrawat.logit.payload.request.SearchRequest;
 import com.ayushsrawat.logit.service.IndexingService;
+import com.ayushsrawat.logit.service.SearchingService;
 import com.ayushsrawat.logit.util.Constants;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +22,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class FluentBitIndexingService implements IndexingService<FluentBitEvent> {
+public class FluentBitService implements IndexingService<FluentBitEvent>, SearchingService<SearchHit<FluentBitEvent>> {
 
-  private static final Logger log = LoggerFactory.getLogger(FluentBitIndexingService.class);
+  private static final Logger log = LoggerFactory.getLogger(FluentBitService.class);
 
-  private final LogIndexer<FluentBitEvent> fluentBitEventLogIndexer;
+  private final LogIndexer<FluentBitEvent> logIndexer;
+  private final LogSearcher<SearchHit<FluentBitEvent>> logSearcher;
 
   private enum Fields {
     TIMESTAMP("timestamp"),
@@ -78,9 +83,16 @@ public class FluentBitIndexingService implements IndexingService<FluentBitEvent>
     Map<String, List<FluentBitEvent>> eventsByIndex = events.stream().collect(Collectors.groupingBy(FluentBitEvent::getServiceName));
     int indexed  = 0;
     for (Map.Entry<String, List<FluentBitEvent>> entry : eventsByIndex.entrySet()) {
-      indexed += fluentBitEventLogIndexer.index(entry.getKey(), entry.getValue());
+      indexed += logIndexer.index(entry.getKey(), entry.getValue());
     }
     return indexed;
+  }
+
+  @Override
+  public List<SearchHit<FluentBitEvent>> search(SearchRequest searchRequest) {
+    List<SearchHit<FluentBitEvent>> hits = logSearcher.search(searchRequest);
+    log.info("Searched {} for request: {}", hits.size(), searchRequest);
+    return hits;
   }
 
 }
