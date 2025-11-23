@@ -28,8 +28,8 @@ public class IndexController {
     log.info("Received {} logs", payload.size());
     List<FluentBitEvent> events = fluentBitService.parseEvents(payload);
     log.info("Parsed {} logs", events.size());
-    int indexed = fluentBitService.indexLogs(events);
-    log.info("Index {} events", indexed);
+    int indexed = fluentBitService.indexLogEvents(events);
+    log.info("Indexed {} events", indexed);
     return ResponseEntity.ok().build();
   }
 

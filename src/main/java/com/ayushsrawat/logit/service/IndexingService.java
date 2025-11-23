@@ -10,7 +10,7 @@ public interface IndexingService<T extends LogEvent> {
 
   T parseEvent(JsonNode node);
 
-  Integer indexLogs(List<T> events);
+  Integer indexLogEvents(List<T> events);
 
   default List<T> parseEvents(JsonNode nodes) {
     List<T> events = new ArrayList<>();

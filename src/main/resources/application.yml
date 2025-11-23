@@ -1,0 +1,10 @@
+server:
+  port: 3338
+
+spring:
+  application:
+    name: logit
+
+logit:
+  index:
+    dir: ${user.home}/lucene/logit/

@@ -1,4 +1,4 @@
-package com.ayushsrawat.logit.tools;
+package com.ayushsrawat.logit.util;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
