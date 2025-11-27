@@ -1,6 +1,8 @@
 env:
-  log_path: "/Users/ayushrawat/cs/devops/elk/logs/catalina.out"
-  state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state.db"
+  auth_log_path: "/Users/ayushrawat/cs/devops/elk/logs/catalina.out"
+  auth_state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state/auth-state.db"
+  vector_log_path: "/Users/ayushrawat/cs/devops/elk/logs/vector.log"
+  vector_state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state/vector-state.db"
 
 service:
   log_level: debug
@@ -12,22 +14,42 @@ pipeline:
       buffer_chunk_size: 1M
       buffer_max_size: 5M
       read_from_head: true
-      path: ${log_path}
-      db: ${state_db_path}
+      path: ${auth_log_path}
+      db: ${auth_state_db_path}
       tag: auth
       key: log
-      multiline.parser: multiline_log_parser
+      multiline.parser: auth_multiline_log_parser
+
+    - name: tail
+      buffer_chunk_size: 1M
+      buffer_max_size: 5M
+      read_from_head: true
+      path: ${vector_log_path}
+      db: ${vector_state_db_path}
+      tag: vector
+      key: log
+      multiline.parser: vector_multiline_log_parser
 
   filters:
     - name: parser
-      match: "*"
+      match: auth
       key_name: log
-      parser: java_log_parser
+      parser: auth_java_log_parser
 
     - name: record_modifier
       match: auth
       record:
         - service_name auth
+
+    - name: parser
+      match: vector
+      key_name: log
+      parser: vector_java_log_parser
+
+    - name: record_modifier
+      match: vector
+      record:
+        service_name vector
 
   outputs:
     - name: http
@@ -40,7 +62,7 @@ pipeline:
       json_date_format: iso8601
 
 multiline_parsers:
-  - name: multiline_log_parser
+  - name: auth_multiline_log_parser
     type: regex
     flush_timeout: 1000
     rules:
@@ -51,11 +73,28 @@ multiline_parsers:
         regex: "^(?![A-Z][a-z]{2} [0-9]{2}, [0-9]{4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [AP]M).*"
         next_state: cont
 
+  - name: vector_multiline_log_parser
+    type: regex
+    flush_timeout: 1000
+    rules:
+      - state: start_state
+        regex: "^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}"
+        next_state: cont
+      - state: cont
+        regex: "^(?![0-9]{4}-[0-9]{1,2}-[0-9]{1,2}).*"
+        next_state: cont
+
 parsers:
-  - name: java_log_parser
+  - name: auth_java_log_parser
     type: regex
     format: regex
     regex: "^(?<timestamp>[A-Z][a-z]{2}\\s*[0-9]{1,2}, [0-9]{4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [AP]M)\\s+(?<class>[A-Za-z0-9\\._\\$]+)\\s+(?<method>[^\n]+)\n+(?<level>(INFO|DEBUG|WARN|ERROR|SEVERE|FATAL|TRACE|WARNING)):\\s+(?<msg>[\\s\\S]*)"
+    time_key: timestamp
+
+  - name: vector_java_log_parser
+    type: regex
+    format: regex
+    regex: "^(?<timestamp>[0-9-]{10}\\s*[0-9:]{8},[0-9]*)\\s*\\[(?<thread>[a-z-0-9]*)\\]\\s*(?<level>[\\w]*)\\s*-\\s*(?<class>[\\w.]*)\\s*\\((?<method>[\\w.:]*)\\)[\\s|{}]*(?<msg>[\\s\\S]*)"
     time_key: timestamp
 
 #

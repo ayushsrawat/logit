@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -31,6 +32,19 @@ public class DateUtil {
       return value == null || value.isBlank() ? 0L : Long.parseLong(value.trim());
     } catch (NumberFormatException e) {
       return 0L;
+    }
+  }
+
+  public LocalDateTime parseDate(String timestamp) {
+    if (timestamp == null) return null;
+    try {
+      return LocalDateTime.parse(timestamp, Constants.DATE_TIME_FORMATTER);
+    } catch (DateTimeParseException e) {
+      try {
+        return LocalDateTime.parse(timestamp, Constants.ISO_DATE_TIME_FORMATTER);
+      } catch (DateTimeParseException e2) {
+        return null;
+      }
     }
   }
 

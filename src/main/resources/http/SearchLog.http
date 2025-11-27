@@ -17,17 +17,33 @@ Accept: application/json
   "stem": true
 }
 
-### Search Fluent Bit Logs
+### VECTOR LOG SEACH
 POST http://localhost:3338/api/search/fluent
 Content-Type: application/json
 Accept: application/json
 
 {
-  "index": "auth",
-  "query": "parsed",
+  "index": "vector",
+  "query": "StitchingFloorPlan",
   "topN": 0,
   "fields": [
     "message"
+  ],
+  "stem": true
+}
+
+
+### VECTOR ERROR LOGS
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
+
+{
+  "index": "vector",
+  "query": "error",
+  "topN": 0,
+  "fields": [
+    "level"
   ],
   "stem": true
 }

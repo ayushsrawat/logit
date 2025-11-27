@@ -7,15 +7,13 @@ import com.ayushsrawat.logit.payload.request.FluentBitEvent;
 import com.ayushsrawat.logit.payload.request.SearchRequest;
 import com.ayushsrawat.logit.service.IndexingService;
 import com.ayushsrawat.logit.service.SearchingService;
-import com.ayushsrawat.logit.util.Constants;
+import com.ayushsrawat.logit.util.DateUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +26,7 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
 
   private final LogIndexer<FluentBitEvent> logIndexer;
   private final LogSearcher<SearchHit<FluentBitEvent>> logSearcher;
+  private final DateUtil dateUtil;
 
   private enum Fields {
     TIMESTAMP("timestamp"),
@@ -48,13 +47,12 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
     FluentBitEvent event = new FluentBitEvent();
     if (node.has(Fields.TIMESTAMP.name)) {
       String timestamp = node.get(Fields.TIMESTAMP.name).asText();
-      try {
-        var time = LocalDateTime.parse(timestamp, Constants.DATE_TIME_FORMATTER);
-        event.setTimestamp(time);
-      } catch (DateTimeParseException pe) {
+      var t = dateUtil.parseDate(timestamp);
+      if (t == null) {
         log.error("Unable to parse timestamp {}", timestamp);
         return null;
       }
+      event.setTimestamp(t);
     }
     if (node.has(Fields.SERVICE.name)) {
       event.setServiceName(node.get(Fields.SERVICE.name).asText());

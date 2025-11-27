@@ -250,6 +250,7 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
 
     @Override
     public void collect(int docId) throws IOException {
+      //noinspection resource
       Document doc = context.reader().storedFields().document(docId); // this needs to be opened
       FluentBitEvent log = documentToLogEvent(doc);
       hits.add(new SearchHit<>(log, scorer.score(), context.docBase + docId));
