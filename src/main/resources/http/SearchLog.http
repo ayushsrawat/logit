@@ -1,4 +1,4 @@
-### Search Fluent Bit Logs
+### AUTH SEARCH
 POST http://localhost:3338/api/search/fluent
 Content-Type: application/json
 Accept: application/json
@@ -46,4 +46,19 @@ Accept: application/json
     "level"
   ],
   "stem": true
+}
+
+### STEMMING TEST
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
+
+{
+  "index": "auth",
+  "query": "populating",
+  "topN": 0,
+  "fields": [
+    "message"
+  ],
+  "stem": false
 }

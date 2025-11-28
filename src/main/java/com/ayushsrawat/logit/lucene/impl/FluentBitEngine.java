@@ -11,7 +11,16 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.StopFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
+import org.apache.lucene.analysis.miscellaneous.KeywordRepeatFilter;
+import org.apache.lucene.analysis.miscellaneous.RemoveDuplicatesTokenFilter;
+import org.apache.lucene.analysis.snowball.SnowballFilter;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongPoint;
@@ -37,6 +46,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.tartarus.snowball.ext.EnglishStemmer;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -136,7 +146,19 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
 
   @Override
   public Analyzer getIndexAnalyzer() {
-    return new StandardAnalyzer();
+    return new Analyzer() {
+      @Override
+      protected TokenStreamComponents createComponents(String fieldName) {
+        final Tokenizer source = new StandardTokenizer();
+        TokenStream result = new EnglishPossessiveFilter(source);
+        result = new LowerCaseFilter(result);
+        result = new StopFilter(result, EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
+        result = new KeywordRepeatFilter(result); // repeat tokens
+        result = new SnowballFilter(result, new EnglishStemmer()); // apply stemming in 1st one of them
+        result = new RemoveDuplicatesTokenFilter(result); // remove one if both are same
+        return new TokenStreamComponents(source, result);
+      }
+    };
   }
 
   ///
@@ -145,7 +167,19 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
 
   @Override
   public Analyzer getSearchAnalyzer(boolean stem) {
-    return new StandardAnalyzer();
+    return new Analyzer() {
+      @Override
+      protected TokenStreamComponents createComponents(String fieldName) {
+        final Tokenizer source = new StandardTokenizer();
+        TokenStream result = new EnglishPossessiveFilter(source);
+        result = new LowerCaseFilter(result);
+        result = new StopFilter(result, EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
+        if (stem) {
+          result = new SnowballFilter(result, new EnglishStemmer()); // stem tokens only if explicitly said
+        }
+        return new TokenStreamComponents(source, result);
+      }
+    };
   }
 
   @Override

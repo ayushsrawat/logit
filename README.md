@@ -7,3 +7,8 @@
 - [ ] UI for the same
   - [ ] web sockets for live log monitoring
   - [ ] dashboards with various ag-charts
+- [ ] can we think about creating a generator for the fluent-bit.yaml?
+- [ ] web socket channels for different indexes for live console view
+- [ ] minimal database (like sqlite) for user authentications
+- [X] different analyzers for Indexing and Searching so that we can impl stemming on/off feature
+- [ ] consider testing log file rotation for fluent bit 

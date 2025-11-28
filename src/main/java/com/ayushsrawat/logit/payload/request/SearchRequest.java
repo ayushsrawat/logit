@@ -17,7 +17,7 @@ public class SearchRequest {
   private String query;
   private Integer topN;
   private List<String> fields;
-  private boolean stem;
+  private boolean stem = true;
 
   @Override
   public String toString() {
