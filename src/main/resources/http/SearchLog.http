@@ -62,3 +62,10 @@ Accept: application/json
   ],
   "stem": false
 }
+
+
+### GET AUTH INDEX COUNT
+GET http://localhost:3338/api/index/count?i=auth
+
+### GET VECTOR INDEX COUNT
+GET http://localhost:3338/api/index/count?i=vector

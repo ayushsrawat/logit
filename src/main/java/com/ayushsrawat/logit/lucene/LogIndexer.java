@@ -14,6 +14,8 @@ public interface LogIndexer<T extends LogEvent> {
 
   Integer index(String indexName, List<T> logEvents);
 
+  Integer docsCount(String indexName);
+
   /// INTERNAL
 
   IndexWriter getIndexWriter(String index);

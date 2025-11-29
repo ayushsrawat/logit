@@ -23,4 +23,6 @@ public interface IndexingService<T extends LogEvent> {
     return events;
   }
 
+  Integer docsCount(String indexName);
+
 }

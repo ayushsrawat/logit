@@ -30,6 +30,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -44,6 +45,7 @@ import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.SimpleCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Bits;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tartarus.snowball.ext.EnglishStemmer;
@@ -123,6 +125,28 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
         return null;
       }
     });
+  }
+
+  @Override
+  public Integer docsCount(String index) {
+    int count = 0;
+    Path indexPath = Paths.get(logitIndexDir + index);
+    try (Directory directory = FSDirectory.open(indexPath); IndexReader reader = DirectoryReader.open(directory)) {
+      for (LeafReaderContext leafContext : reader.leaves()) {
+        //noinspection resource
+        LeafReader leafReader = leafContext.reader();
+        Bits liveDocs = leafReader.getLiveDocs();
+        for (int i = 0; i < leafReader.maxDoc(); i++) {
+          if (liveDocs == null || liveDocs.get(i)) {
+            count += 1;
+          }
+        }
+      }
+      return count;
+    } catch (IOException e) {
+      log.error("Error while counting total indexed docs for index {}: {}", index, e.getMessage());
+    }
+    return 0;
   }
 
   @Override

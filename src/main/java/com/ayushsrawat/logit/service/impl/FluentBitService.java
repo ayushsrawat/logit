@@ -70,7 +70,7 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
       event.setMessage(node.get(Fields.MESSAGE.name).asText());
     }
     if (event.isIncomplete()) {
-      log.error("Incomplete FluentBit Event: {}", node);
+      log.warn("Incomplete FluentBit Event: {}", node);
       return null;
     }
     return event;
@@ -85,6 +85,15 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
     }
     return indexed;
   }
+
+  @Override
+  public Integer docsCount(String indexName) {
+    return logIndexer.docsCount(indexName);
+  }
+
+  ///
+  /// SEARCHING
+  ///
 
   @Override
   public List<SearchHit<FluentBitEvent>> search(SearchRequest searchRequest) {
