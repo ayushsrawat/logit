@@ -31,11 +31,13 @@ dependencies {
 	implementation "org.apache.lucene:lucene-highlighter:${luceneVersion}"
 	implementation "org.apache.lucene:lucene-suggest:${luceneVersion}"
 
+	implementation 'net.openhft:chronicle-queue:5.27ea11'
+	// implementation 'org.postgresql:postgresql:42.7.7'
+
 	compileOnly 'org.projectlombok:lombok:1.18.42'
+	compileOnly 'org.jetbrains:annotations:26.0.2-1'
 	annotationProcessor 'org.projectlombok:lombok:1.18.42'
 
-	// https://mvnrepository.com/artifact/org.postgresql/postgresql
-	// implementation 'org.postgresql:postgresql:42.7.7'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

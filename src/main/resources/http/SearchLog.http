@@ -1,3 +1,12 @@
+### GET AUTH INDEX COUNT
+GET http://localhost:3338/api/index/count?i=auth
+
+### GET VECTOR INDEX COUNT
+GET http://localhost:3338/api/index/count?i=vector
+
+### GET KAFKA INDEX COUNT
+GET http://localhost:3338/api/index/count?i=kafka
+
 ### AUTH SEARCH
 POST http://localhost:3338/api/search/fluent
 Content-Type: application/json
@@ -63,9 +72,17 @@ Accept: application/json
   "stem": false
 }
 
+### KAFKA STEMMING TEST
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
 
-### GET AUTH INDEX COUNT
-GET http://localhost:3338/api/index/count?i=auth
-
-### GET VECTOR INDEX COUNT
-GET http://localhost:3338/api/index/count?i=vector
+{
+  "index": "kafka",
+  "query": "populate*",
+  "topN": 0,
+  "fields": [
+    "method"
+  ],
+  "stem": false
+}

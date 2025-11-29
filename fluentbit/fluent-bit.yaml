@@ -1,8 +1,8 @@
 env:
   auth_log_path: "/Users/ayushrawat/cs/devops/elk/logs/catalina.out"
-  auth_state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state/auth-state.db"
   vector_log_path: "/Users/ayushrawat/cs/devops/elk/logs/vector.log"
-  vector_state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state/vector-state.db"
+  kafka_log_path: "/Users/ayushrawat/cs/devops/elk/logs/kafka.log"
+  state_db_path: "/Users/ayushrawat/cs/java/logit/fluentbit/state/"
 
 service:
   log_level: debug
@@ -15,7 +15,7 @@ pipeline:
       buffer_max_size: 5M
       read_from_head: true
       path: ${auth_log_path}
-      db: ${auth_state_db_path}
+      db: ${state_db_path}/auth-state.db
       tag: auth
       key: log
       multiline.parser: auth_multiline_log_parser
@@ -25,10 +25,20 @@ pipeline:
       buffer_max_size: 5M
       read_from_head: true
       path: ${vector_log_path}
-      db: ${vector_state_db_path}
+      db: ${state_db_path}/vector-state.db
       tag: vector
       key: log
       multiline.parser: vector_multiline_log_parser
+
+    - name: tail
+      buffer_chunk_size: 1M
+      buffer_max_size: 5M
+      read_from_head: true
+      path: ${kafka_log_path}
+      db: ${state_db_path}/kafka-state.db
+      tag: kafka
+      key: log
+      multiline.parser: auth_multiline_log_parser
 
   filters:
     - name: parser
@@ -50,6 +60,16 @@ pipeline:
       match: vector
       record:
         service_name vector
+
+    - name: parser
+      match: kafka
+      key_name: log
+      parser: auth_java_log_parser
+
+    - name: record_modifier
+      match: kafka
+      record:
+        - service_name kafka
 
   outputs:
     - name: http

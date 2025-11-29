@@ -95,7 +95,6 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
     if (writer == null) {
       return 0;
     }
-
     try {
       var docs = eventsToDocument(logEvents);
       writer.addDocuments(docs);
@@ -210,6 +209,7 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
   public List<SearchHit<FluentBitEvent>> search(SearchRequest searchQuery) {
     try {
       IndexSearcher searcher = getIndexSearcher(searchQuery.getIndex());
+      if (searcher == null) return List.of();
       List<String> searchFields = Arrays.stream(IndexField.values())
         .map(indexField -> indexField.name)
         .filter(name -> searchQuery.getFields().contains(name))

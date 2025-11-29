@@ -70,7 +70,7 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
       event.setMessage(node.get(Fields.MESSAGE.name).asText());
     }
     if (event.isIncomplete()) {
-      log.warn("Incomplete FluentBit Event: {}", node);
+      log.warn("Incomplete FluentBit Event in service: {}", node.get(Fields.SERVICE.name));
       return null;
     }
     return event;
