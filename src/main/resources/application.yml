@@ -8,3 +8,5 @@ spring:
 logit:
   index:
     dir: ${user.home}/lucene/logit/
+  queue:
+    dir: ${user.home}/chronicle

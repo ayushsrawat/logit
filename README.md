@@ -12,3 +12,5 @@
 - [ ] minimal database (like sqlite) for user authentications
 - [X] different analyzers for Indexing and Searching so that we can impl stemming on/off feature
 - [X] consider testing log file rotation for fluent bit 
+- [ ] Authentication key when fluent bit send http log events?
+- [ ] scheduler to delete chronicle queue data
