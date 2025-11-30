@@ -16,4 +16,6 @@ A small, production-grade log indexing & search microservice.
 - [ ] Authentication key when fluent bit send http log events?
 - [X] scheduler to delete chronicle queue data
 - [X] how to have pointer in chronicle queue for consumer to know which files are read?
-- [X] if we start the server, the consumer starts reading the same logs! fix this asap 
+- [X] if we start the server, the consumer starts reading the same logs! fix this asap
+- [ ] you are searching all the logs even though you just have to give topN so need to fix this for performance reasons
+- [ ] include the notion of time in the search query
