@@ -54,8 +54,8 @@ public class QueueService {
     return threadLocalAppender.get();
   }
 
-  public ExcerptTailer getTailer() {
-    return queue.createTailer();
+  public ExcerptTailer getTailer(@NonNull String id) {
+    return queue.createTailer(id);
   }
 
   @Scheduled(cron = "0 5 1/4 * * *")

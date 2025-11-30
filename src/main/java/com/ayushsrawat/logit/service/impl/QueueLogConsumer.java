@@ -32,7 +32,7 @@ public class QueueLogConsumer implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
-    ExcerptTailer tailer = queueService.getTailer();
+    ExcerptTailer tailer = queueService.getTailer("logit-indexer-consumer");
     log.info("Starting Chronicle Queue Consumer...");
     Thread thread = new Thread(() -> {
       while (running) {
