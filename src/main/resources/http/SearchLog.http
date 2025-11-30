@@ -1,3 +1,6 @@
+### INDEXD LOG COUNT STATS
+GET http://localhost:3338/api/search/stats/ic
+
 ### GET AUTH INDEX COUNT
 GET http://localhost:3338/api/index/count?i=auth
 

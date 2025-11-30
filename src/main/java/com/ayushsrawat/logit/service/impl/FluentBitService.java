@@ -5,6 +5,7 @@ import com.ayushsrawat.logit.lucene.LogSearcher;
 import com.ayushsrawat.logit.lucene.SearchHit;
 import com.ayushsrawat.logit.payload.request.FluentBitEvent;
 import com.ayushsrawat.logit.payload.request.SearchRequest;
+import com.ayushsrawat.logit.payload.response.IndexCountDTO;
 import com.ayushsrawat.logit.service.IndexingService;
 import com.ayushsrawat.logit.service.SearchingService;
 import com.ayushsrawat.logit.util.DateUtil;
@@ -12,8 +13,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +40,9 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
   private final LogIndexer<FluentBitEvent> logIndexer;
   private final LogSearcher<SearchHit<FluentBitEvent>> logSearcher;
   private final DateUtil dateUtil;
+
+  @Value("${logit.index.dir}")
+  private String logitIndexDir;
 
   private enum Fields {
     TIMESTAMP("timestamp"),
@@ -100,6 +116,27 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
     List<SearchHit<FluentBitEvent>> hits = logSearcher.search(searchRequest);
     log.info("Searched {} for request: {}", hits.size(), searchRequest);
     return hits;
+  }
+
+  @Override
+  public List<IndexCountDTO> indexCountStats() {
+    List<IndexCountDTO> indexCounts = new ArrayList<>();
+    try {
+      Files.walkFileTree(Paths.get(logitIndexDir), EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<>() {
+        @Override
+        public @NonNull FileVisitResult visitFile(@NonNull Path path, @NonNull BasicFileAttributes attrs) {
+          if (Files.isDirectory(path)) {
+            String index = path.getFileName().toString();
+            int docsCount = docsCount(index);
+            indexCounts.add(IndexCountDTO.builder().index(index).count(docsCount).build());
+          }
+          return FileVisitResult.CONTINUE;
+        }
+      });
+    } catch (IOException e) {
+      log.error("Error while counting log indexes", e);
+    }
+    return indexCounts;
   }
 
 }

@@ -5,6 +5,8 @@ build/
 !**/src/test/**/build/
 fluentbit/state*
 
+ui/
+
 ### STS ###
 .apt_generated
 .classpath

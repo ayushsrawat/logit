@@ -1,7 +1,7 @@
 package com.ayushsrawat.logit.controller;
 
 import com.ayushsrawat.logit.payload.request.FluentBitEvent;
-import com.ayushsrawat.logit.payload.response.IndexCounterDTO;
+import com.ayushsrawat.logit.payload.response.IndexCountDTO;
 import com.ayushsrawat.logit.service.IndexingService;
 import com.ayushsrawat.logit.service.impl.QueueService;
 import com.ayushsrawat.logit.util.Constants;
@@ -42,9 +42,9 @@ public class IndexController {
   }
 
   @GetMapping("/count")
-  public ResponseEntity<IndexCounterDTO> countIndexDocs(@RequestParam(value = "i") String index) {
+  public ResponseEntity<IndexCountDTO> countIndexDocs(@RequestParam(value = "i") String index) {
     Integer count = fbIndexingService.docsCount(index);
-    return ResponseEntity.ok(IndexCounterDTO.builder().index(index).count(count).build());
+    return ResponseEntity.ok(IndexCountDTO.builder().index(index).count(count).build());
   }
 
 }

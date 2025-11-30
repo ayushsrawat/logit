@@ -3,4 +3,4 @@ package com.ayushsrawat.logit.payload.response;
 import lombok.Builder;
 
 @Builder
-public record IndexCounterDTO(String index, Integer count) {}
+public record IndexCountDTO(String index, Integer count) {}

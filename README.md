@@ -15,3 +15,5 @@ A small, production-grade log indexing & search microservice.
 - [X] consider testing log file rotation for fluent bit 
 - [ ] Authentication key when fluent bit send http log events?
 - [X] scheduler to delete chronicle queue data
+- [ ] how to have pointer in chronicle queue for consumer to know which files are read?
+- [ ] if we start the server, the consumer starts reading the same logs! fix this asap 
