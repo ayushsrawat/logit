@@ -24,3 +24,6 @@
 [2025/11/29 12:20:01] [  Error] open: Too many open files, errno=24 at /private/tmp/fluent-bit-20251009-6629-g0dt1o/fluent-bit-4.1.1[2025/11/29 12:20:01.978596000] [error] [sched] a 'retry request' could not be scheduled. the system might be running out of memory or file descriptors. The scheduler will do a retry later.
 /lib/monkey/mk_core/mk_event_kqueue.c:198
 ```
+
+- Even after implementing Chronicle Queue in logit this stress test fails
+- These errors suggest me this is a system or fluent bit issue rather than logit

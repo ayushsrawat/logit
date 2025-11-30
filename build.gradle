@@ -34,6 +34,7 @@ tasks.withType(JavaExec).configureEach {
             '-Dchronicle.analytics.disable=true'
     ]
 }
+// --enable-native-access=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.nio.channels.spi=ALL-UNNAMED -Dchronicle.analytics.disable=true
 
 repositories {
     mavenCentral()
