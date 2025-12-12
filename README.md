@@ -1,21 +1,55 @@
-# LOGIT
-A small, production-grade log indexing & search microservice.
+# Logit
 
-## TODOS
-- [X] add multiple sources of logs with different regex and then handle them in logit
-- [X] the above will quite increase the resiliency and the shape of the project, because from the birth it know how to handle diverse data 
-- [X] consider adding lightweight queueing service like rabbitmq to asynchronously handle the log indexing
-- [ ] UI for the same
-  - [ ] web sockets for live log monitoring
-  - [ ] dashboards with various ag-charts
-- [ ] can we think about creating a generator for the fluent-bit.yaml?
-- [ ] web socket channels for different indexes for live console view
-- [ ] minimal database (like sqlite) for user authentications
-- [X] different analyzers for Indexing and Searching so that we can impl stemming on/off feature
-- [X] consider testing log file rotation for fluent bit 
-- [ ] Authentication key when fluent bit send http log events?
-- [X] scheduler to delete chronicle queue data
-- [X] how to have pointer in chronicle queue for consumer to know which files are read?
-- [X] if we start the server, the consumer starts reading the same logs! fix this asap
-- [ ] you are searching all the logs even though you just have to give topN so need to fix this for performance reasons
-- [ ] include the notion of time in the search query
+**A lightweight, production-grade log indexing & search microservice.**
+
+Logit is a custom-built solution designed to provide powerful log search capabilities without the operational complexity and resource overhead of heavy distributed systems. It combines the raw power of **Apache Lucene** for indexing with **Chronicle Queue** for ultra-low latency ingestion.
+
+## Why Logit?
+
+In the world of log observability, the **ELK Stack (Elasticsearch, Logstash, Kibana)** is the industry giant. However, for many smaller projects or single-server deployments, ELK is overkill:
+
+*   **Resource Heavy**: Elasticsearch is a memory hog, often requiring gigabytes of RAM just to idle.
+*   **Complexity**: Managing a distributed cluster when you only have one machine adds unnecessary operational burden.
+*   **"Magic"**: Sometimes you just want to index strings and search them without dealing with complex sharding, replication, and node coordination.
+
+**Logit fills this gap.** It runs as a single, efficient Java process. It gives you the full text search capabilities of Lucene (which Elasticsearch is built on) but stripped down to exactly what you need: **ingesting, indexing, and finding your logs.**
+
+## Features
+
+*   *** Lightweight**: Minimal memory footprint compared to ELK.
+*   *** High Performance**: Built on **Java 25** and **Spring Boot 3.5**.
+*   *** Direct Lucene**: Uses Apache Lucene 10.3 directly for optimized search operations.
+*   *** Durable Ingestion**: Uses **Chronicle Queue** to buffer logs, ensuring no data loss even during high traffic bursts.
+*   *** Universal Ingest**: Compatible with **Fluent Bit** (and anything else that can send JSON over HTTP).
+*   *** Modern UI**: Clean, responsive frontend built with **Vite** and **Vanilla CSS**.
+
+## Quick Start
+
+### Prerequisites
+*   Java 25+
+*   Node.js (for the UI)
+
+### 1. Start the Backend
+The backend serves the API for ingestion and search.
+```bash
+./gradlew bootRun
+```
+
+### 2. Start the UI
+The frontend provides a clean interface to search and filter your logs.
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+### 3. Start Log Ingestion
+We provide a pre-configured Fluent Bit setup to ship logs to Logit.
+```bash
+cd fluentbit
+./start.sh
+```
+*(Ensure you have Fluent Bit installed or use the provided wrapper if applicable)*
+
+---
+*Built with ❤️ by Ayush Rawat*
