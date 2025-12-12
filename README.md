@@ -16,12 +16,12 @@ In the world of log observability, the **ELK Stack (Elasticsearch, Logstash, Kib
 
 ## Features
 
-*   *** Lightweight**: Minimal memory footprint compared to ELK.
-*   *** High Performance**: Built on **Java 25** and **Spring Boot 3.5**.
-*   *** Direct Lucene**: Uses Apache Lucene 10.3 directly for optimized search operations.
-*   *** Durable Ingestion**: Uses **Chronicle Queue** to buffer logs, ensuring no data loss even during high traffic bursts.
-*   *** Universal Ingest**: Compatible with **Fluent Bit** (and anything else that can send JSON over HTTP).
-*   *** Modern UI**: Clean, responsive frontend built with **Vite** and **Vanilla CSS**.
+*   **Lightweight**: Minimal memory footprint compared to ELK.
+*   **High Performance**: Built on **Java 25** and **Spring Boot 3.5**.
+*   **Direct Lucene**: Uses Apache Lucene 10.3 directly for optimized search operations.
+*   **Durable Ingestion**: Uses **Chronicle Queue** to buffer logs, ensuring no data loss even during high traffic bursts.
+*   **Universal Ingest**: Compatible with **Fluent Bit** (and anything else that can send JSON over HTTP).
+*   **Modern UI**: Clean, responsive frontend built with **Vite** and **Vanilla CSS**.
 
 ## Quick Start
 
