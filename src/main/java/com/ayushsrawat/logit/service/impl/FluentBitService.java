@@ -122,6 +122,7 @@ public class FluentBitService implements IndexingService<FluentBitEvent>, Search
   public List<IndexCountDTO> indexCountStats() {
     List<IndexCountDTO> indexCounts = new ArrayList<>();
     try {
+      // maxDepth = 1 !!
       Files.walkFileTree(Paths.get(logitIndexDir), EnumSet.noneOf(FileVisitOption.class), 1, new SimpleFileVisitor<>() {
         @Override
         public @NonNull FileVisitResult visitFile(@NonNull Path path, @NonNull BasicFileAttributes attrs) {

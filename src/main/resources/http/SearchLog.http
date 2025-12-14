@@ -18,7 +18,7 @@ Accept: application/json
 {
   "index": "auth",
   "query": "level:error OR message:timeout",
-  "topN": 20,
+  "topN": 5,
   "fields": [
     "timestamp",
     "message",
@@ -88,4 +88,38 @@ Accept: application/json
     "method"
   ],
   "stem": false
+}
+
+### RELATIVE TIME BASED SEARCHING
+
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
+
+{
+  "index": "kafka",
+  "query": "populate*",
+  "topN": 0,
+  "stem": false,
+  "timeRange": {
+    "start" : "1 months ago",
+    "end" : "now"
+  }
+}
+
+### ABSOLUTE TIME BASED SEARCHING
+
+POST http://localhost:3338/api/search/fluent
+Content-Type: application/json
+Accept: application/json
+
+{
+"index": "kafka",
+"query": "populate*",
+"topN": 0,
+"stem": false,
+"timeRange": {
+"start" : "2025-07-09T11:35:32",
+"end" : "2025-07-09T11:40:33"
+}
 }

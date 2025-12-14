@@ -33,7 +33,7 @@ public class QueueLogConsumer implements CommandLineRunner {
   @Override
   public void run(String... args) {
     ExcerptTailer tailer = queueService.getTailer("logit-indexer-consumer");
-    log.info("Starting Chronicle Queue Consumer...");
+    log.info("Starting Chronicle Queue Consumer... Tailing from {}", tailer.queue().fileAbsolutePath());
     Thread thread = new Thread(() -> {
       while (running) {
         try (DocumentContext context = tailer.readingDocument()) {

@@ -19,3 +19,4 @@ A small, production-grade log indexing & search microservice.
 - [X] if we start the server, the consumer starts reading the same logs! fix this asap
 - [ ] you are searching all the logs even though you just have to give topN so need to fix this for performance reasons
 - [ ] include the notion of time in the search query
+- [ ] fix - you don't have to find all the searches if user provide topN value... just get the topN and don't waste the compute

@@ -5,6 +5,7 @@ import com.ayushsrawat.logit.lucene.LogSearcher;
 import com.ayushsrawat.logit.lucene.SearchHit;
 import com.ayushsrawat.logit.payload.request.FluentBitEvent;
 import com.ayushsrawat.logit.payload.request.SearchRequest;
+import com.ayushsrawat.logit.payload.request.SearchTimeRange;
 import com.ayushsrawat.logit.util.DateUtil;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
@@ -61,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -210,6 +212,9 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
     try {
       IndexSearcher searcher = getIndexSearcher(searchQuery.getIndex());
       if (searcher == null) return List.of();
+      if (searchQuery.getFields() == null || searchQuery.getFields().isEmpty()) {
+        searchQuery.setFields(Arrays.stream(IndexField.values()).map(i -> i.name).collect(Collectors.toList()));
+      }
       List<String> searchFields = Arrays.stream(IndexField.values())
         .map(indexField -> indexField.name)
         .filter(name -> searchQuery.getFields().contains(name))
@@ -218,6 +223,21 @@ public class FluentBitEngine implements LogIndexer<FluentBitEvent>, LogSearcher<
       QueryParser parser = new MultiFieldQueryParser(searchFields.toArray(new String[0]), getSearchAnalyzer(searchQuery.isStem()));
       Query textQuery = parser.parse(searchQuery.getQuery());
       bqb.add(textQuery, BooleanClause.Occur.MUST);
+      if (searchQuery.getTimeRange() != null) {
+        SearchTimeRange timeRange = searchQuery.getTimeRange();
+        if (timeRange.getStart() != null || timeRange.getEnd() != null) {
+          long lowerDateRange = dateUtil.resolveTime(timeRange.getStart());
+          long upperDateRange = dateUtil.resolveTime(timeRange.getEnd());
+          if (upperDateRange == 0L) upperDateRange = System.currentTimeMillis();
+          if (lowerDateRange > upperDateRange) { // swap
+            lowerDateRange ^= upperDateRange;
+            upperDateRange ^= lowerDateRange;
+            lowerDateRange ^= upperDateRange;
+          }
+          Query dateRangeQuery = LongPoint.newRangeQuery(IndexField.TIMESTAMP.name, lowerDateRange, upperDateRange);
+          bqb.add(dateRangeQuery, BooleanClause.Occur.MUST);
+        }
+      }
       Query query = bqb.build();
       PriorityQueue<SearchHit<FluentBitEvent>> hits = searcher.search(query, new LogCollectorManager());
       log.info("Searched [{}] tweets for the query [{}]", hits.size(), query);
